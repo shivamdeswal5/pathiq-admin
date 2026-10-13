@@ -1,9 +1,11 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { StatusCodes } from 'http-status-codes';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 import { supabaseBrowser } from './supabase-browser';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_BASE_URL && typeof window !== 'undefined') {
+  console.error('CRITICAL: NEXT_PUBLIC_API_URL environment variable is not defined.');
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +15,7 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor: Attach Supabase Bearer token via active user session
+// Request interceptor: Attach Supabase Bearer token via active session
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
@@ -32,19 +34,24 @@ apiClient.interceptors.request.use(
 
 export interface ApiErrorResponse {
   statusCode?: number;
-  message: string | string[];
+  message?: string | string[];
   error?: string;
 }
 
-// Response interceptor: Normalize responses and catch errors cleanly
-apiClient.interceptors.response.use(
-  (response) => {
-    if (response.status === StatusCodes.NO_CONTENT) {
-      return response;
+// Single responsibility error message extractor (replaces duplicate inline type casts)
+export function getApiErrorMessage(
+  err: unknown,
+  fallback = 'An unexpected error occurred. Please try again.',
+): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as ApiErrorResponse | undefined;
+    if (data?.message) {
+      return Array.isArray(data.message) ? data.message.join('; ') : data.message;
     }
-    return response;
-  },
-  (error: AxiosError<ApiErrorResponse>) => {
-    return Promise.reject(error);
-  },
-);
+    if (err.message) return err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return fallback;
+}

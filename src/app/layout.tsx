@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { ToastProvider } from '@/components/ui/toast';
 
 export const metadata: Metadata = {
   title: 'Pathiq Super Admin — Platform Governance & Billing Cockpit',
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -19,7 +21,9 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-teal-600 selection:text-white"
       >
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { X, Sparkles, CheckCircle2, AlertTriangle, Loader2, Building2 } from 'lucide-react';
 import { AdminTenantListItem, PlanSlug, BillingCycle } from '@/types/admin';
 import { useManualActivationMutation } from '../api/payments.mutations';
+import { getApiErrorMessage } from '@/lib/api-client';
+import { useToast } from '@/components/ui/toast';
 
 interface ActivationModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ function ActivationModalForm({
   tenant: AdminTenantListItem;
   onClose: () => void;
 }) {
+  const { toast } = useToast();
   const activateMutation = useManualActivationMutation();
 
   const [selectedPlan, setSelectedPlan] = useState<PlanSlug>(tenant.planSlug || 'GROWTH');
@@ -27,7 +30,7 @@ function ActivationModalForm({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!utrNumber.trim()) {
       setErrorMsg('Please enter a valid 12-digit bank UTR / IMPS reference.');
@@ -49,25 +52,26 @@ function ActivationModalForm({
       setSuccessMsg(
         `Subscription activated successfully! Tax Invoice ${res.invoiceNumber} generated for ${res.planName}.`,
       );
+      toast.success(
+        'Offline UTR Approved',
+        `Subscription activated for ${tenant.labName}. Tax invoice ${res.invoiceNumber} generated.`,
+      );
       setTimeout(() => {
         onClose();
       }, 1800);
     } catch (err: unknown) {
-      const errorResponse = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-      setErrorMsg(
-        errorResponse?.response?.data?.message ||
-          errorResponse.message ||
-          'Failed to activate subscription. Check UTR uniqueness.',
+      const errText = getApiErrorMessage(
+        err,
+        'Failed to activate subscription. Check UTR uniqueness.',
       );
+      setErrorMsg(errText);
+      toast.error('Activation Failed', errText);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div className="bg-white border-t sm:border border-slate-200 rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 sm:p-8 shadow-2xl relative max-h-[92dvh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute right-5 top-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"

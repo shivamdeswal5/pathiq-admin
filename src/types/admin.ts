@@ -1,6 +1,12 @@
 export type PlanSlug = 'STARTER' | 'GROWTH' | 'SCALE';
 export type BillingCycle = 'MONTHLY' | 'YEARLY';
-export type SubscriptionStatus = 'TRIALING' | 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED';
+export type SubscriptionStatus =
+  | 'TRIALING'
+  | 'ACTIVE'
+  | 'GRACE_PERIOD'
+  | 'LOCKED'
+  | 'SUSPENDED'
+  | 'CANCELED';
 
 export interface AdminTenantListItem {
   labId: string;
@@ -88,4 +94,76 @@ export interface AdminCreateTenantResponse {
   planSlug: string;
   status: string;
   invoiceNumber?: string;
+}
+
+export interface ExtendTrialPayload {
+  labId: string;
+  days: number;
+  reason?: string;
+}
+
+export interface ExtendTrialResponse {
+  success: boolean;
+  labId: string;
+  previousTrialEnd: string;
+  newTrialEnd: string;
+  daysAdded: number;
+  status: SubscriptionStatus;
+}
+
+export interface ToggleTenantStatusPayload {
+  labId: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'LOCKED';
+  reason?: string;
+}
+
+export interface ToggleTenantStatusResponse {
+  success: boolean;
+  labId: string;
+  previousStatus: string;
+  newStatus: string;
+  updatedAt: string;
+}
+
+export interface AdminPlanItem {
+  id: string;
+  slug: PlanSlug;
+  name: string;
+  description: string | null;
+  monthlyPriceInr: number;
+  yearlyPriceInr: number;
+  featureEntitlements: Record<string, unknown>;
+  isActive: boolean;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export interface AdminUpdatePlanDto {
+  name?: string;
+  description?: string;
+  monthlyPriceInr?: number;
+  yearlyPriceInr?: number;
+  featureEntitlements?: Record<string, unknown>;
+  isActive?: boolean;
+  isPublic?: boolean;
+}
+
+export interface AdminImpersonateResponse {
+  success: boolean;
+  labId: string;
+  labName: string;
+  ownerEmail: string;
+  magicLink: string;
+}
+
+export interface AdminPurgeTestDataResponse {
+  success: boolean;
+  labId: string;
+  deletedCounts: {
+    reports: number;
+    invoices: number;
+    patients: number;
+    collections: number;
+  };
+  purgedAt: string;
 }

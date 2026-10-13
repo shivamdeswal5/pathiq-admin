@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { authService } from '../api/auth.service';
+import { authService, isSuperAdminEmail } from '../api/auth.service';
 
 export function useAuth() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export function useAuth() {
       try {
         const session = await authService.getSession();
         if (mounted) {
-          if (session?.user) {
+          if (session?.user && isSuperAdminEmail(session.user.email)) {
             setUserEmail(session.user.email || null);
             setIsAuthenticated(true);
           } else {
@@ -43,7 +43,7 @@ export function useAuth() {
     const { data: authListener } = supabaseBrowser.auth.onAuthStateChange(
       (_event, session) => {
         if (mounted) {
-          if (session?.user) {
+          if (session?.user && isSuperAdminEmail(session.user.email)) {
             setUserEmail(session.user.email || null);
             setIsAuthenticated(true);
           } else {

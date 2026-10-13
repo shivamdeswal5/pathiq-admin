@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Lock, Mail, Loader2, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { authService } from '../api/auth.service';
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('deswalworks@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
       setError('Please provide both administrative email and password.');
@@ -34,7 +34,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/50 relative">
+    <div className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-200/50 relative">
       {/* Brand Header */}
       <div className="flex flex-col items-center text-center mb-8">
         <div className="h-14 w-14 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700 shadow-sm mb-4">

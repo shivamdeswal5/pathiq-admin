@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CreditCard, RefreshCw, CheckCircle2, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { CreditCard, CheckCircle2, Copy, Check } from 'lucide-react';
 import { AdminPaymentListItem } from '@/types/admin';
+import { PaymentLedgerSkeleton, PaymentCardSkeleton } from '@/components/ui/skeleton';
+import { PaymentCard } from './_components/payment-card';
 
 interface PaymentLedgerProps {
   payments: AdminPaymentListItem[];
@@ -19,36 +21,48 @@ export function PaymentLedger({ payments, loading }: PaymentLedgerProps) {
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50/80 text-slate-500 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200">
-            <tr>
-              <th className="py-3.5 px-4">Transaction / UTR Ref</th>
-              <th className="py-3.5 px-4">Diagnostic Lab</th>
-              <th className="py-3.5 px-4">Channel / Mode</th>
-              <th className="py-3.5 px-4">Amount (₹)</th>
-              <th className="py-3.5 px-4">Status</th>
-              <th className="py-3.5 px-4 text-right">Audit Trail</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
+    <div className="space-y-4">
+      {/* Mobile Card List (< md) */}
+      <div className="block md:hidden space-y-3">
+        {loading ? (
+          <PaymentCardSkeleton />
+        ) : payments.length === 0 ? (
+          <div className="py-12 px-4 text-center text-slate-400 bg-white border border-slate-200/80 rounded-2xl">
+            <CreditCard className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+            <p className="font-semibold text-slate-700 text-sm">No payment records found</p>
+            <p className="text-xs text-slate-400 mt-1">Manual bank UTR approvals and webhooks will appear here</p>
+          </div>
+        ) : (
+          payments.map((p) => <PaymentCard key={p.id} payment={p} />)
+        )}
+      </div>
+
+      {/* Desktop Data Grid (md+) */}
+      <div className="hidden md:block bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50/80 text-slate-500 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200">
               <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-400">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-teal-600" />
-                  <p className="text-xs font-medium">Loading platform payment records...</p>
-                </td>
+                <th className="py-3.5 px-4">Transaction / UTR Ref</th>
+                <th className="py-3.5 px-4">Diagnostic Lab</th>
+                <th className="py-3.5 px-4">Channel / Mode</th>
+                <th className="py-3.5 px-4">Amount (₹)</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4 text-right">Audit Trail</th>
               </tr>
-            ) : payments.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-slate-400">
-                  <CreditCard className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                  <p className="font-semibold text-slate-700">No payment records found</p>
-                  <p className="text-xs text-slate-400 mt-1">Manual bank UTR approvals and webhooks will appear here</p>
-                </td>
-              </tr>
-            ) : (
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <PaymentLedgerSkeleton />
+              ) : payments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p className="font-semibold text-slate-700">No payment records found</p>
+                    <p className="text-xs text-slate-400 mt-1">Manual bank UTR approvals and webhooks will appear here</p>
+                  </td>
+                </tr>
+              ) : (
               payments.map((p) => {
                 const amountInr = (p.amountInr || 0).toLocaleString('en-IN');
                 const isManual = p.provider === 'MANUAL';
@@ -147,5 +161,6 @@ export function PaymentLedger({ payments, loading }: PaymentLedgerProps) {
         </table>
       </div>
     </div>
-  );
+  </div>
+);
 }
