@@ -8,7 +8,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
  * Sessions are safely synchronized across browser tabs and cookies.
  */
 export function createSupabaseBrowserClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: {
+      name: 'sb-admin-auth-token',
+    },
+  });
 }
 
 export const supabaseBrowser = createSupabaseBrowserClient();

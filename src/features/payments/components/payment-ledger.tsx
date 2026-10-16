@@ -1,10 +1,9 @@
-'use client';
-
 import { useState } from 'react';
-import { CreditCard, CheckCircle2, Copy, Check } from 'lucide-react';
-import { AdminPaymentListItem } from '@/types/admin';
+import { CreditCard, CheckCircle2, Copy, Check, Clock, ShieldCheck } from 'lucide-react';
+import { AdminPaymentListItem, PlanSlug, BillingCycle } from '@/types/admin';
 import { PaymentLedgerSkeleton, PaymentCardSkeleton } from '@/components/ui/skeleton';
 import { PaymentCard } from './_components/payment-card';
+import { useManualActivationMutation } from '../api/payments.mutations';
 
 interface PaymentLedgerProps {
   payments: AdminPaymentListItem[];
@@ -13,11 +12,31 @@ interface PaymentLedgerProps {
 
 export function PaymentLedger({ payments, loading }: PaymentLedgerProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const manualActivationMutation = useManualActivationMutation();
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleVerify = async (payment: AdminPaymentListItem) => {
+    const rawUtr = payment.providerPaymentId || payment.details?.utrNumber || payment.details?.utr;
+    if (typeof rawUtr !== 'string' || !rawUtr.trim()) return;
+    const cleanUtr = rawUtr.trim();
+
+    setVerifyingId(payment.id);
+    try {
+      await manualActivationMutation.mutateAsync({
+        labId: payment.labId,
+        planSlug: (payment.details?.planSlug as PlanSlug) || 'GROWTH',
+        billingCycle: (payment.details?.billingCycle as BillingCycle) || 'MONTHLY',
+        utrNumber: cleanUtr,
+      });
+    } finally {
+      setVerifyingId(null);
+    }
   };
 
   return (
@@ -128,21 +147,38 @@ export function PaymentLedger({ payments, loading }: PaymentLedgerProps) {
 
                     {/* Status */}
                     <td className="py-4 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          p.status === 'SUCCESS' || p.status === 'CAPTURED'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-slate-100 text-slate-600 border border-slate-200'
-                        }`}
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>{p.status}</span>
-                      </span>
+                      {p.status === 'PENDING' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Clock className="h-3 w-3" />
+                          <span>Pending Verification</span>
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            p.status === 'SUCCESS' || p.status === 'CAPTURED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>{p.status}</span>
+                        </span>
+                      )}
                     </td>
 
-                    {/* Audit Details */}
+                    {/* Audit Details / Verification Actions */}
                     <td className="py-4 px-4 text-right text-xs font-mono text-slate-600">
-                      {p.details?.approvedBy ? (
+                      {p.status === 'PENDING' && (p.providerPaymentId || p.details?.utrNumber) ? (
+                        <button
+                          type="button"
+                          onClick={() => handleVerify(p)}
+                          disabled={verifyingId === p.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer transition disabled:opacity-50"
+                        >
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          <span>{verifyingId === p.id ? 'Activating...' : 'Verify & Activate'}</span>
+                        </button>
+                      ) : p.details?.approvedBy ? (
                         <div>
                           <span className="text-emerald-700 font-bold">Approved by {p.details.approvedBy}</span>
                           {p.details?.utr && (
